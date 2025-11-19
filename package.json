@@ -1,0 +1,36 @@
+{
+  "name": "baidu-ai-search",
+  "version": "1.0.0",
+  "description": "百度AI搜索代理服务",
+  "main": "src/server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "mcp": "node src/mcp/server.js",
+    "mcp:dev": "node --watch src/mcp/server.js",
+    "test:concurrent": "node test-concurrent.js",
+    "docker:build": "docker build -f docker/Dockerfile.app -t baidu-ai-search-app .",
+    "docker:up": "cd docker && docker-compose up -d",
+    "docker:down": "cd docker && docker-compose down",
+    "docker:logs": "cd docker && docker-compose logs -f"
+  },
+  "keywords": [
+    "playwright",
+    "baidu",
+    "ai-search",
+    "headless-browser"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.4",
+    "express": "^4.18.2",
+    "playwright-core": "^1.40.0",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  }
+}
+

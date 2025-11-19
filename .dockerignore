@@ -1,0 +1,42 @@
+# Dependencies
+node_modules
+npm-debug.log
+# 注意：保留 package-lock.json 以确保依赖版本一致性
+
+# Screenshots
+screenshots
+*.png
+
+# Git
+.git
+.gitignore
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+docker/*
+!docker/start.sh
+*.md
+!README.md
+
+# Tests
+test-*.js
+test-*.sh
+test-*.md
+
+# Logs
+*.log
+logs
+
+# Environment
+.env
+.env.local
+

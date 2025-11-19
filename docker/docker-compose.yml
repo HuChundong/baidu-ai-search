@@ -1,0 +1,83 @@
+version: '3.8'
+
+services:
+  # Node.js 应用服务
+  app:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.app
+    container_name: baidu-ai-search-app
+    ports:
+      # 端口映射：宿主机端口:容器内端口
+      # APP_PORT 控制宿主机端口（默认 3000），容器内固定使用 3000
+      - "${APP_PORT:-3000}:3000"
+    environment:
+      # 服务模式配置（api 或 mcp，默认 mcp）
+      - MODE=${MODE:-mcp}
+      
+      # 服务器配置（容器内固定使用 3000 端口）
+      - PORT=3000
+      - HOST=0.0.0.0
+      
+      # 浏览器池配置（连接到内部 browser 服务）
+      - CDP_ENDPOINT=ws://browser:3000
+      - MAX_CONNECTIONS=${MAX_CONNECTIONS:-10}
+      - CONNECTION_TIMEOUT=${CONNECTION_TIMEOUT:-30000}
+      - MAX_RETRIES=${MAX_RETRIES:-3}
+      - RETRY_DELAY=${RETRY_DELAY:-1000}
+      
+      # 搜索服务配置
+      - SEARCH_TIMEOUT=${SEARCH_TIMEOUT:-60000}
+      - DEVICE_TYPE=${DEVICE_TYPE:-mobile}
+      
+      # 截图配置
+      - ENABLE_ERROR_SCREENSHOT=${ENABLE_ERROR_SCREENSHOT:-true}
+      - SCREENSHOT_DIR=${SCREENSHOT_DIR:-./screenshots}
+      - SCREENSHOT_IN_RESPONSE=${SCREENSHOT_IN_RESPONSE:-false}
+      
+      # 复制按钮配置
+      - USE_COPY_BUTTON=${USE_COPY_BUTTON:-true}
+      - COPY_BUTTON_TIMEOUT=${COPY_BUTTON_TIMEOUT:-30000}
+      - CLIPBOARD_WAIT=${CLIPBOARD_WAIT:-1000}
+    volumes:
+      # 挂载截图目录到宿主机（可选）
+      - ../screenshots:/app/screenshots
+    depends_on:
+      - browser
+    restart: unless-stopped
+    networks:
+      - app-network
+    healthcheck:
+      # 根据 MODE 选择健康检查端点：api 模式使用 /api/health，mcp 模式使用 /mcp/health
+      test: ["CMD", "sh", "-c", "if [ \"$MODE\" = \"mcp\" ]; then node -e \"require('http').get('http://localhost:3000/mcp/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))\" || exit 1; else node -e \"require('http').get('http://localhost:3000/api/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))\" || exit 1; fi"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # Browserless Chromium 服务（不对外暴露端口）
+  browser:
+    image: ghcr.io/browserless/chromium:latest
+    container_name: baidu-ai-search-browser
+    # 不暴露端口到宿主机，只在内部网络访问
+    expose:
+      - "3000"
+    environment:
+      # Browserless 配置
+      - MAX_CONCURRENT_SESSIONS=${MAX_CONCURRENT_SESSIONS:-10}
+      - CONNECTION_TIMEOUT=${BROWSER_CONNECTION_TIMEOUT:-300000}
+      - KEEP_ALIVE=true
+    shm_size: '2gb'
+    restart: unless-stopped
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+networks:
+  app-network:
+    driver: bridge
